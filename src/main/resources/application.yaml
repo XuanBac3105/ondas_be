@@ -1,3 +1,34 @@
 spring:
   application:
     name: ondas_be
+
+---
+# ── Profile: dev (chạy app trực tiếp trên máy, DB trong Docker) ──
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/${POSTGRES_DB:ondas_db}
+    username: ${POSTGRES_USER:ondas_user}
+    password: ${POSTGRES_PASSWORD:ondas_password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+jwt:
+  secret: dev-only-secret-key-change-in-production
+  expiration: 86400000
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.example.ondas_be: DEBUG
+    org.springframework.security: DEBUG

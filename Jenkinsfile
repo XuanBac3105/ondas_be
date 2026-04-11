@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // ── Docker Hub ─────────────────────────────────────────
-        DOCKERHUB_USERNAME = 'yourdockerhubusername'   // ← Thay username của bạn
+        DOCKERHUB_USERNAME = 'dinhtrieuxtnd'   // ← Thay username của bạn
         IMAGE_NAME         = "${DOCKERHUB_USERNAME}/ondas-be"
         IMAGE_TAG          = "${BUILD_NUMBER}"
 
@@ -23,7 +23,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-                echo "✅ Checkout hoàn tất - Branch: ${env.GIT_BRANCH}"
+                echo "Checkout hoàn tất - Branch: ${env.GIT_BRANCH}"
             }
         }
 
@@ -32,7 +32,7 @@ pipeline {
             steps {
                 dir('ondas_be') {
                     sh 'mvn clean package -DskipTests -B --no-transfer-progress'
-                    echo '✅ Build JAR thành công'
+                    echo 'Build JAR thành công'
                 }
             }
         }
@@ -57,7 +57,7 @@ pipeline {
             steps {
                 dir('ondas_be') {
                     sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest ."
-                    echo "✅ Docker image: ${IMAGE_NAME}:${IMAGE_TAG}"
+                    echo "Docker image: ${IMAGE_NAME}:${IMAGE_TAG}"
                 }
             }
         }
@@ -74,7 +74,7 @@ pipeline {
                     sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
                     sh "docker push ${IMAGE_NAME}:latest"
                     sh "docker logout"
-                    echo "✅ Đã push image lên Docker Hub"
+                    echo "Đã push image lên Docker Hub"
                 }
             }
         }
@@ -93,25 +93,24 @@ pipeline {
                         chmod 600 ${DEPLOY_DIR}/.env
                     """
 
-                    // Bước 2: Copy docker-compose.yml (base/prod) vào thư mục deploy
-                    // Không copy override.yml → VPS chỉ dùng cấu hình production
-                    sh "cp ondas_be/docker-compose.yml ${DEPLOY_DIR}/docker-compose.yml"
+                    // Bước 2: Copy docker-compose.prod.yml vào thư mục deploy
+                    sh "cp ondas_be/docker-compose.prod.yml ${DEPLOY_DIR}/docker-compose.prod.yml"
 
                     // Bước 3: Pull image mới và restart (dùng host Docker qua socket)
                     sh """
-                        docker compose -f ${DEPLOY_DIR}/docker-compose.yml \
+                        docker compose -f ${DEPLOY_DIR}/docker-compose.prod.yml \
                             --env-file ${DEPLOY_DIR}/.env \
                             pull ondas-be
 
-                        docker compose -f ${DEPLOY_DIR}/docker-compose.yml \
+                        docker compose -f ${DEPLOY_DIR}/docker-compose.prod.yml \
                             --env-file ${DEPLOY_DIR}/.env \
                             up -d --force-recreate ondas-be
 
                         docker image prune -f
                     """
 
-                    echo "✅ Deploy thành công!"
-                    echo "🌐 App: http://103.245.237.251:8080"
+                    echo "Deploy thành công!"
+                    echo "App: http://103.245.237.251:8080"
                 }
             }
         }
@@ -121,14 +120,14 @@ pipeline {
         success {
             echo """
             ╔══════════════════════════════════════╗
-            ║  ✅ BUILD & DEPLOY THÀNH CÔNG!       ║
+            ║  BUILD & DEPLOY THÀNH CÔNG!         ║
             ║  App:     http://103.245.237.251:8080 ║
             ║  Jenkins: http://103.245.237.251:9090 ║
             ╚══════════════════════════════════════╝
             """
         }
         failure {
-            echo '❌ Pipeline thất bại. Xem Console Output để biết chi tiết.'
+            echo 'Pipeline thất bại. Xem Console Output để biết chi tiết.'
         }
         always {
             sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true"

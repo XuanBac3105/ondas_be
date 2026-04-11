@@ -1,14 +1,9 @@
 # ══════════════════════════════════════════════════════════
-#  docker-compose.yml  — Base config (Production / VPS)
+#  docker-compose.prod.yml  — Production / VPS
 #
-#  Cách dùng:
-#    - Trên VPS (Jenkins deploy):
-#        docker compose -f docker-compose.yml --env-file .env up -d
-#    - Local dev: file này được merge tự động với docker-compose.override.yml
-#        docker compose up -d
+#  Cách dùng (Jenkins deploy):
+#    docker compose -f docker-compose.prod.yml --env-file .env up -d
 # ══════════════════════════════════════════════════════════
-
-version: '3.9'
 
 services:
 
@@ -34,9 +29,7 @@ services:
 
   # ── Spring Boot Backend ─────────────────────────────────
   ondas-be:
-    # Image được push lên Docker Hub bởi Jenkins.
-    # Thay "yourdockerhubusername" bằng username Docker Hub thực của bạn.
-    image: yourdockerhubusername/ondas-be:latest
+    image: dinhtrieuxtnd/ondas-be:latest
     container_name: ondas-be
     restart: unless-stopped
     ports:
@@ -57,7 +50,6 @@ services:
 # ── Volumes & Networks ────────────────────────────────────
 volumes:
   postgres_data:
-    # Data PostgreSQL được giữ nguyên khi container restart/recreate
 
 networks:
   ondas-network:

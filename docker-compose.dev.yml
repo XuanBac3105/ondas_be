@@ -1,0 +1,31 @@
+# ══════════════════════════════════════════════════════════
+#  docker-compose.dev.yml  — Local Development
+#
+#  Chỉ khởi động PostgreSQL, mở port ra ngoài để
+#  IDE / DBeaver / TablePlus kết nối trực tiếp.
+#
+#  Spring Boot chạy trực tiếp trên máy (không qua Docker):
+#    ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+#    hoặc set SPRING_PROFILES_ACTIVE=dev trong IntelliJ Run Config
+#
+#  Cách dùng:
+#    docker compose -f docker-compose.dev.yml up -d
+# ══════════════════════════════════════════════════════════
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ondas-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ondas_db
+      POSTGRES_USER:     ondas_user
+      POSTGRES_PASSWORD: ondas_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_dev_data:
