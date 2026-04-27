@@ -6,6 +6,7 @@ import com.example.ondas_be.infrastructure.persistence.jparepo.AlbumJpaRepo;
 import com.example.ondas_be.infrastructure.persistence.model.AlbumModel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -68,6 +69,14 @@ public class AlbumAdapter implements AlbumRepoPort {
     @Override
     public List<Album> findByTitleFullText(String query, int page, int size) {
         return albumJpaRepo.findByTitleFullText(query, PageRequest.of(page, size))
+                .map(AlbumModel::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Album> findLatestReleases(int limit) {
+        Sort sort = Sort.by(Sort.Direction.DESC, "releaseDate").and(Sort.by(Sort.Direction.DESC, "createdAt"));
+        return albumJpaRepo.findAll(PageRequest.of(0, limit, sort))
                 .map(AlbumModel::toDomain)
                 .toList();
     }

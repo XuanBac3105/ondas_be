@@ -6,6 +6,7 @@ import com.example.ondas_be.infrastructure.persistence.jparepo.SongJpaRepo;
 import com.example.ondas_be.infrastructure.persistence.model.SongModel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -123,5 +124,12 @@ public class SongAdapter implements SongRepoPort {
     @Override
     public List<Song> findByIds(List<UUID> ids) {
         return songJpaRepo.findByIdIn(ids).stream().map(SongModel::toDomain).toList();
+    }
+
+    @Override
+    public List<Song> findTopByPlayCount(int limit) {
+        return songJpaRepo.findAll(PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "playCount")))
+                .map(SongModel::toDomain)
+                .toList();
     }
 }

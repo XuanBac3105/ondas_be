@@ -45,4 +45,6 @@ public interface SongRepoPort {
     void incrementPlayCount(UUID id);
 
     List<Song> findByIds(List<UUID> ids);
+
+    List<Song> findTopByPlayCount(int limit);
 }

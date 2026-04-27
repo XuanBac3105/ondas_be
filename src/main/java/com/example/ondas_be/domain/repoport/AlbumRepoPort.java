@@ -28,5 +28,7 @@ public interface AlbumRepoPort {
 
     List<Album> findByTitleFullText(String query, int page, int size);
 
+    List<Album> findLatestReleases(int limit);
+
     long countByTitleFullText(String query);
 }
