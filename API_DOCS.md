@@ -15,6 +15,7 @@
 - [Albums](#albums)
 - [Artists](#artists)
 - [Genres](#genres)
+- [Playlists](#playlists)
 - [Play History](#play-history)
 - [Phân quyền](#phân-quyền)
 - [Mã lỗi thường gặp](#mã-lỗi-thường-gặp)
@@ -804,6 +805,209 @@ Xóa thể loại.
 
 ---
 
+## Playlists
+
+> **Quy tắc truy cập:**
+> - Playlist `isPublic=true`: ai cũng xem được.
+> - Playlist `isPublic=false`: chỉ owner xem/sửa/xóa được.
+
+### POST `/api/playlists`
+
+Tạo playlist mới cho user đang đăng nhập.
+
+**Auth:** ✅ Yêu cầu (JWT)
+
+**Content-Type:** `multipart/form-data`
+
+**Parts:**
+| Part | Type | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `data` | JSON (`CreatePlaylistRequest`) | ✅ | Thông tin playlist |
+| `cover` | File | ❌ | Ảnh cover playlist |
+
+**`CreatePlaylistRequest`:**
+| Field | Type | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `name` | string | ✅ | Tên playlist |
+| `description` | string | ❌ | Mô tả |
+| `isPublic` | boolean | ❌ | Public hay private (mặc định `false`) |
+
+**Response `201 Created`:**
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": {
+    "id": "uuid",
+    "userId": "uuid",
+    "name": "Chill Vibes",
+    "description": "Nhạc nghe buổi tối",
+    "coverUrl": "https://...",
+    "public": false,
+    "totalSongs": 0,
+    "createdAt": "2026-04-27T20:00:00",
+    "updatedAt": "2026-04-27T20:00:00",
+    "songs": []
+  }
+}
+```
+
+---
+
+### PUT `/api/playlists/{id}`
+
+Cập nhật playlist (owner only).
+
+**Auth:** ✅ Yêu cầu (JWT)
+
+**Content-Type:** `multipart/form-data`
+
+**Path Params:**
+| Param | Type | Mô tả |
+|---|---|---|
+| `id` | UUID | ID playlist |
+
+**Parts:**
+| Part | Type | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `data` | JSON (`UpdatePlaylistRequest`) | ✅ | Partial update |
+| `cover` | File | ❌ | Ảnh cover mới |
+
+**`UpdatePlaylistRequest` fields:** `name`, `description`, `isPublic` — tất cả optional.
+
+**Response `200 OK`:** Trả về `PlaylistResponse` đã cập nhật.
+
+---
+
+### GET `/api/playlists/{id}`
+
+Lấy chi tiết playlist.
+
+**Auth:** ❌ Không bắt buộc
+
+> Nếu playlist private, cần JWT của owner; nếu không sẽ trả `403 Forbidden`.
+
+**Path Params:**
+| Param | Type | Mô tả |
+|---|---|---|
+| `id` | UUID | ID playlist |
+
+**Response `200 OK`:** Trả về `PlaylistResponse` (bao gồm `songs`).
+
+---
+
+### GET `/api/playlists`
+
+Lấy danh sách playlist theo filter.
+
+**Auth:** ❌ Không bắt buộc
+
+> Nếu `owner=true`, bắt buộc gửi JWT (lấy playlist của chính user đăng nhập).
+
+**Query Params:**
+| Param | Type | Bắt buộc | Mặc định | Mô tả |
+|---|---|---|---|---|
+| `query` | string | ❌ | — | Tìm theo tên playlist |
+| `owner` | boolean | ❌ | `false` | `true` để lấy playlist của user hiện tại |
+| `isPublic` | boolean | ❌ | — | Lọc trạng thái public/private |
+| `page` | integer | ❌ | `0` | Trang (0-based) |
+| `size` | integer | ❌ | `20` | Số phần tử mỗi trang |
+
+**Lưu ý hành vi filter:**
+- `owner=false` hoặc bỏ trống: chỉ trả playlist public.
+- `owner=true`: trả playlist của user hiện tại; có thể lọc thêm `isPublic=true/false`.
+- `owner=false&isPublic=false`: trả `400 Bad Request`.
+
+**Response `200 OK`:** Trả về `PageResultDto<PlaylistResponse>`.
+
+---
+
+### DELETE `/api/playlists/{id}`
+
+Xóa playlist (owner only).
+
+**Auth:** ✅ Yêu cầu (JWT)
+
+**Response `200 OK`:**
+```json
+{ "success": true, "message": "OK", "data": null }
+```
+
+---
+
+### POST `/api/playlists/{id}/songs`
+
+Thêm bài hát vào playlist (owner only).
+
+**Auth:** ✅ Yêu cầu (JWT)
+
+**Path Params:**
+| Param | Type | Mô tả |
+|---|---|---|
+| `id` | UUID | ID playlist |
+
+**Request Body:**
+| Field | Type | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `songId` | UUID | ✅ | ID bài hát cần thêm |
+
+```json
+{
+  "songId": "uuid"
+}
+```
+
+**Response `200 OK`:** Trả về `PlaylistResponse` sau khi thêm bài hát.
+
+---
+
+### DELETE `/api/playlists/{id}/songs/{songId}`
+
+Xóa bài hát khỏi playlist (owner only).
+
+**Auth:** ✅ Yêu cầu (JWT)
+
+**Path Params:**
+| Param | Type | Mô tả |
+|---|---|---|
+| `id` | UUID | ID playlist |
+| `songId` | UUID | ID bài hát |
+
+**Response `200 OK`:** Trả về `PlaylistResponse` sau khi xóa bài hát.
+
+---
+
+### PUT `/api/playlists/{id}/songs/reorder`
+
+Sắp xếp lại thứ tự bài hát trong playlist (owner only).
+
+**Auth:** ✅ Yêu cầu (JWT)
+
+**Path Params:**
+| Param | Type | Mô tả |
+|---|---|---|
+| `id` | UUID | ID playlist |
+
+**Request Body:**
+| Field | Type | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `songIds` | UUID[] | ✅ | Danh sách **đầy đủ** song ID theo thứ tự mới |
+
+```json
+{
+  "songIds": ["uuid-song-1", "uuid-song-2", "uuid-song-3"]
+}
+```
+
+**Quy tắc reorder:**
+- Payload phải chứa đúng toàn bộ bài hát hiện có trong playlist.
+- Không được thiếu, thừa hoặc trùng `songId`.
+- Sai format payload sẽ trả `400 Bad Request`.
+
+**Response `200 OK`:** Trả về `PlaylistResponse` sau khi reorder.
+
+---
+
 ## Play History
 
 > **Lưu ý:** `play_count` của bài hát tăng khi gọi `POST /api/play-history` thành công. Client nên gọi API này sau khi user nghe được ≥ 30 giây để tránh tính lượt nghe không hợp lệ.
@@ -948,9 +1152,20 @@ Xóa một mục lịch sử cụ thể. Chỉ xóa được mục thuộc về 
 - `DELETE /api/auth/logout`
 - `POST /api/auth/forgot-password`
 - `POST /api/auth/reset-password`
+- `GET /api/playlists`
+- `GET /api/playlists/{id}` (public playlist)
 
 **Endpoint yêu cầu ADMIN hoặc CONTENT_MANAGER:**
 - `POST`, `PUT`, `DELETE` trên `/api/songs`, `/api/albums`, `/api/artists`, `/api/genres`
+
+**Endpoint yêu cầu USER đăng nhập (owner scope):**
+- `POST /api/playlists`
+- `PUT /api/playlists/{id}`
+- `DELETE /api/playlists/{id}`
+- `POST /api/playlists/{id}/songs`
+- `DELETE /api/playlists/{id}/songs/{songId}`
+- `PUT /api/playlists/{id}/songs/reorder`
+- `GET /api/playlists?owner=true`
 
 ---
 
